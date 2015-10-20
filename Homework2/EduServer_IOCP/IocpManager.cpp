@@ -11,21 +11,22 @@ __declspec(thread) int LIoThreadId = 0;
 IocpManager* GIocpManager = nullptr;
 
 
-//TODO AcceptEx DisconnectEx 함수 사용할 수 있도록 구현.
+//AcceptEx DisconnectEx 함수 사용할 수 있도록 구현.
 
 BOOL DisconnectEx(SOCKET hSocket, LPOVERLAPPED lpOverlapped, DWORD dwFlags, DWORD reserved)
 {
-	//return ...
+	printf_s("DisconnectEx \n");
 	return 0;
 }
 
-/* 참고: 최신 버전의 Windows SDK에서는 그냥 구현되어 있음
-BOOL AcceptEx(SOCKET sListenSocket, SOCKET sAcceptSocket, PVOID lpOutputBuffer, DWORD dwReceiveDataLength,
+ //참고: 최신 버전의 Windows SDK에서는 그냥 구현되어 있음
+BOOL AcceptEx2(SOCKET sListenSocket, SOCKET sAcceptSocket, PVOID lpOutputBuffer, DWORD dwReceiveDataLength,
 	DWORD dwLocalAddressLength, DWORD dwRemoteAddressLength, LPDWORD lpdwBytesReceived, LPOVERLAPPED lpOverlapped)
 {
+	printf_s("AcceptEx \n");
 	return 0;
 }
-*/
+
 IocpManager::IocpManager() : mCompletionPort(NULL), mIoThreadCount(2), mListenSocket(NULL)
 {	
 }
@@ -77,12 +78,31 @@ bool IocpManager::Initialize()
 	if (SOCKET_ERROR == bind(mListenSocket, (SOCKADDR*)&serveraddr, sizeof(serveraddr)))
 		return false;
 
-	//TODO : WSAIoctl을 이용하여 AcceptEx, DisconnectEx 함수 사용가능하도록 하는 작업..
+	//WSAIoctl을 이용하여 AcceptEx, DisconnectEx 함수 사용가능하도록 하는 작업..
 
+	if (SOCKET_ERROR == listen(mListenSocket, BACK_LOG))
+	{
+		printf_s("[DEBUG] listen error: %d\n", GetLastError());
+		return false;
+	}
 
+	GUID GuidAcceptEx = WSAID_ACCEPTEX;
 
+	DWORD dwBytes;
+	int ret = WSAIoctl(mListenSocket, SIO_GET_EXTENSION_FUNCTION_POINTER, &GuidAcceptEx, sizeof(GuidAcceptEx), &lpfnAcceptEx, sizeof(LPFN_ACCEPTEX), &dwBytes, NULL, NULL);
+	if (SOCKET_ERROR == ret)
+	{
+		printf_s("[DEBUG] make acceptEx error: %d", GetLastError());
+		return false;
+	}
 
-
+	GUID GuidDisconnectEx = WSAID_DISCONNECTEX;
+	ret = WSAIoctl(mListenSocket, SIO_GET_EXTENSION_FUNCTION_POINTER, &GuidDisconnectEx, sizeof(GuidDisconnectEx), &lpfnDisconnectEx, sizeof(LPFN_DISCONNECTEX), &dwBytes, NULL, NULL);
+	if (SOCKET_ERROR == ret)
+	{
+		printf_s("[DEBUG] make disconnectEx error: %d", GetLastError());
+		return false;
+	}
 
 	/// make session pool
 	GSessionManager->PrepareSessions();
@@ -153,8 +173,12 @@ unsigned int WINAPI IocpManager::IoWorkerThread(LPVOID lpParam)
 		{
 			int gle = GetLastError();
 
-			//TODO: check time out first ... GQCS 타임 아웃의 경우는 어떻게?
-			
+			//check time out first ... GQCS 타임 아웃의 경우는 어떻게?
+			if (gle == WAIT_TIMEOUT)
+			{
+				printf_s("[DEBUG] WAIT_TIMEOUT Occur!\n");
+				continue;
+			}
 		
 			if (context->mIoType == IO_RECV || context->mIoType == IO_SEND )
 			{
@@ -216,7 +240,8 @@ unsigned int WINAPI IocpManager::IoWorkerThread(LPVOID lpParam)
 bool IocpManager::PreReceiveCompletion(ClientSession* client, OverlappedPreRecvContext* context, DWORD dwTransferred)
 {
 	/// real receive...
-	return client->PreRecv();
+	printf_s("IocpManager::preReceveCompletion\n");
+	return client->PostRecv();
 }
 
 bool IocpManager::ReceiveCompletion(ClientSession* client, OverlappedRecvContext* context, DWORD dwTransferred)

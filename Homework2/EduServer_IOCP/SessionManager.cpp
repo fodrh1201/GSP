@@ -51,13 +51,19 @@ bool SessionManager::AcceptSessions()
 
 	while (mCurrentIssueCount - mCurrentReturnCount < MAX_CONNECTION)
 	{
-		//TODO mFreeSessionList에서 ClientSession* 꺼내서 PostAccept() 해주기.. (위의 ReturnClientSession와 뭔가 반대로 하면 될 듯?)
-		
+		// mFreeSessionList에서 ClientSession* 꺼내서 PostAccept() 해주기.. (위의 ReturnClientSession와 뭔가 반대로 하면 될 듯?)
+
+		ClientSession* client = mFreeSessionList.back();
+		mFreeSessionList.pop_back();
+		client->AddRef();
+		if (false == client->PostAccept())
+			return false;
 		// AddRef()도 당연히 해줘야 하고...
 
 		// 실패시 false
 		//if (false == newClient->PostAccept())
 		//	return false;
+		++mCurrentIssueCount;
 	}
 
 
