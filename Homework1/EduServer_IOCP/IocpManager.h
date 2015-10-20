@@ -23,8 +23,8 @@ private:
 
 	static unsigned int WINAPI IoWorkerThread(LPVOID lpParam);
 
-	static bool ReceiveCompletion(const ClientSession* client, OverlappedIOContext* context, DWORD dwTransferred);
-	static bool SendCompletion(const ClientSession* client, OverlappedIOContext* context, DWORD dwTransferred);
+	bool ReceiveCompletion(const ClientSession* client, OverlappedIOContext* context, DWORD dwTransferred);
+	bool SendCompletion(const ClientSession* client, OverlappedIOContext* context, DWORD dwTransferred);
 
 private:
 
@@ -32,8 +32,6 @@ private:
 	int		mIoThreadCount;
 
 	SOCKET	mListenSocket;
-
-
 
 };
 

@@ -32,7 +32,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	printf_s("Start Server\n");
 	if (false == GIocpManager->StartAcceptLoop())
 		return -1;
-
+	
 
 	GIocpManager->Finalize();
 

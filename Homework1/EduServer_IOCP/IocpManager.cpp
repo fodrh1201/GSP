@@ -20,7 +20,9 @@ IocpManager::~IocpManager()
 
 bool IocpManager::Initialize()
 {
-	//TODO: mIoThreadCount = ...;GetSystemInfo사용해서 set num of I/O threads
+	SYSTEM_INFO sysInfo;
+	GetSystemInfo(&sysInfo);
+	mIoThreadCount = sysInfo.dwNumberOfProcessors;
 
 	/// winsock initializing
 	WSADATA wsa;
@@ -29,16 +31,27 @@ bool IocpManager::Initialize()
 
 	/// Create I/O Completion Port
 	//TODO: mCompletionPort = CreateIoCompletionPort(...)
-	
 	/// create TCP socket
 	//TODO: mListenSocket = ...
-	
+	mCompletionPort = CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, 0, 0);
+	mListenSocket = WSASocket(AF_INET, SOCK_STREAM, 0, NULL, 0, WSA_FLAG_OVERLAPPED);
+
 	int opt = 1;
 	setsockopt(mListenSocket, SOL_SOCKET, SO_REUSEADDR, (const char*)&opt, sizeof(int));
 
 	//TODO:  bind
 	//if (SOCKET_ERROR == bind(mListenSocket, (SOCKADDR*)&serveraddr, sizeof(serveraddr)))
 	//	return false;
+
+	SOCKADDR_IN serveraddr;
+	memset(&serveraddr, 0, sizeof(serveraddr));
+	serveraddr.sin_family = AF_INET;
+	serveraddr.sin_addr.s_addr = htonl(INADDR_ANY);
+	serveraddr.sin_port = htons(LISTEN_PORT);
+
+	if (SOCKET_ERROR == bind(mListenSocket, (SOCKADDR*)&serveraddr, sizeof(serveraddr)))
+		return false;
+	printf_s("[DEBUG] bind Complete IP=%s, PORT=%d \n", inet_ntoa(serveraddr.sin_addr), htons(serveraddr.sin_port));
 
 	return true;
 }
@@ -49,8 +62,9 @@ bool IocpManager::StartIoThreads()
 	/// I/O Thread
 	for (int i = 0; i < mIoThreadCount; ++i)
 	{
-		DWORD dwThreadId;
 		//TODO: HANDLE hThread = (HANDLE)_beginthreadex...);
+		DWORD dwThreadId;
+		HANDLE hThread = (HANDLE)_beginthreadex(NULL, 0, IoWorkerThread, (LPVOID)i, 0, (unsigned int*)&dwThreadId);
 	}
 
 	return true;
@@ -63,7 +77,7 @@ bool IocpManager::StartAcceptLoop()
 	if (SOCKET_ERROR == listen(mListenSocket, SOMAXCONN))
 		return false;
 
-
+	
 	/// accept loop
 	while (true)
 	{
@@ -115,7 +129,8 @@ unsigned int WINAPI IocpManager::IoWorkerThread(LPVOID lpParam)
 		OverlappedIOContext* context = nullptr;
 		ClientSession* asCompletionKey = nullptr;
 
-		int ret = 0; ///<여기에는 GetQueuedCompletionStatus(hComletionPort, ..., GQCS_TIMEOUT)를 수행한 결과값을 대입
+		int ret = GetQueuedCompletionStatus(GIocpManager->GetComletionPort(), &dwTransferred,
+			(PULONG_PTR)&asCompletionKey, (LPOVERLAPPED*)&context, GQCS_TIMEOUT);
 
 		/// check time out first 
 		if (ret == 0 && GetLastError()==WAIT_TIMEOUT)
@@ -129,9 +144,11 @@ unsigned int WINAPI IocpManager::IoWorkerThread(LPVOID lpParam)
 			continue;
 		}
 
-		// if (nullptr == context) 인 경우 처리
-		//{
-		//}
+		if (nullptr == context)
+		{
+			printf_s("context has nullptr\n");
+			continue;
+		}
 
 		bool completionOk = true;
 		switch (context->mIoType)
@@ -165,17 +182,26 @@ bool IocpManager::ReceiveCompletion(const ClientSession* client, OverlappedIOCon
 {
 
 	/// echo back 처리 client->PostSend()사용.
-	
+	if (!client->PostSend(context->mBuffer, dwTransferred))
+	{
+		printf_s("Post Send error: %d\n", GetLastError());
+		delete context;
+		return false;
+	}
 	delete context;
-
 	return client->PostRecv();
 }
 
 bool IocpManager::SendCompletion(const ClientSession* client, OverlappedIOContext* context, DWORD dwTransferred)
 {
 	/// 전송 다 되었는지 확인하는 것 처리..
-	//if (context->mWsaBuf.len != dwTransferred) {...}
-	
+	if (context->mWsaBuf.len != dwTransferred)
+	{
+		printf_s("Send Not Completed\n");
+		delete context;
+		return false;
+	}
+
 	delete context;
 	return true;
 }

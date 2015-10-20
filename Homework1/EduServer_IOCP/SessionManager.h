@@ -22,7 +22,7 @@ private:
 	typedef std::map<SOCKET, ClientSession*> ClientList;
 	ClientList	mClientList;
 
-	//TODO: mLock; ¼±¾ð
+	FastSpinlock mLock;
 
 	volatile long mCurrentConnectionCount;
 };

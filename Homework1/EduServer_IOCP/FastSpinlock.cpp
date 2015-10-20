@@ -31,3 +31,9 @@ void FastSpinlock::LeaveLock()
 {
 	InterlockedExchange(&mLockFlag, 0);
 }
+
+FastSpinlock & FastSpinlock::operator=(const FastSpinlock & rhs)
+{
+	mLockFlag = rhs.mLockFlag;
+	return *this;
+}
