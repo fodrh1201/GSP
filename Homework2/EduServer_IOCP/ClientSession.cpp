@@ -5,6 +5,7 @@
 #include "IocpManager.h"
 #include "SessionManager.h"
 
+char acceptBuffer[128];
 
 OverlappedIOContext::OverlappedIOContext(ClientSession* owner, IOType ioType) 
 : mSessionObject(owner), mIoType(ioType)
@@ -48,12 +49,12 @@ bool ClientSession::PostAccept()
 	CRASH_ASSERT(LThreadType == THREAD_MAIN);
 
 	OverlappedAcceptContext* acceptContext = new OverlappedAcceptContext(this);
-	acceptContext->mWsaBuf.len = mBuffer.GetFreeSpaceSize();
-	acceptContext->mWsaBuf.buf = mBuffer.GetBuffer();
+	acceptContext->mWsaBuf.len = 128;
+	acceptContext->mWsaBuf.buf = nullptr;
 	// AccpetEx를 이용한 구현.
 
 	DWORD dwBytes;
-	bool ret = GIocpManager->lpfnAcceptEx(*(GIocpManager->GetListenSocket()), mSocket, acceptContext->mWsaBuf.buf, acceptContext->mWsaBuf.len - ((sizeof(sockaddr_in) + 16) * 2),
+	bool ret = GIocpManager->lpfnAcceptEx(*(GIocpManager->GetListenSocket()), mSocket, acceptBuffer, 0,
 		sizeof(sockaddr_in) + 16, sizeof(sockaddr_in) + 16, &dwBytes, &(acceptContext->mOverlapped));
 
 	if (ret == false)
@@ -177,7 +178,7 @@ bool ClientSession::PreRecv()
 
 	DWORD recvbytes = 0;
 	DWORD flags = 0;
-	int ret = WSARecv(mSocket, &(recvContext->mWsaBuf), 1, &recvbytes, &flags, (LPWSAOVERLAPPED)recvContext, NULL);
+	int ret = WSARecv(mSocket, &recvContext->mWsaBuf, 1, &recvbytes, &flags, (LPWSAOVERLAPPED)recvContext, nullptr);
 	if (SOCKET_ERROR == ret)
 	{
 		if (WSAGetLastError() != WSA_IO_PENDING)

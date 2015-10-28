@@ -55,15 +55,15 @@ bool SessionManager::AcceptSessions()
 
 		ClientSession* client = mFreeSessionList.back();
 		mFreeSessionList.pop_back();
-		client->AddRef();
+		++mCurrentIssueCount;
+
 		if (false == client->PostAccept())
 			return false;
 		// AddRef()도 당연히 해줘야 하고...
-
+		client->AddRef();
 		// 실패시 false
 		//if (false == newClient->PostAccept())
 		//	return false;
-		++mCurrentIssueCount;
 	}
 
 

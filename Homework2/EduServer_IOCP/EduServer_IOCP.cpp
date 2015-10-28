@@ -14,7 +14,7 @@ __declspec(thread) int LThreadType = -1;
 int _tmain(int argc, _TCHAR* argv[])
 {
 	LThreadType = THREAD_MAIN;
-
+	
 	/// for dump on crash
 	SetUnhandledExceptionFilter(ExceptionFilter);
 

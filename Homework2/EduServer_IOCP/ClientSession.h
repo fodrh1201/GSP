@@ -87,6 +87,7 @@ public:
 	void	SessionReset();
 
 	bool	IsConnected() const { return !!mConnected; }
+	// why !!?
 
 	bool	PostAccept();
 	void	AcceptCompletion();

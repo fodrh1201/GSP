@@ -11,7 +11,7 @@ public:
 	
 private:
 	FastSpinlock(const FastSpinlock& rhs);
-	FastSpinlock& operator=(const FastSpinlock& rhs);
+//	FastSpinlock& operator=(const FastSpinlock& rhs);
 
 	volatile long mLockFlag;
 };

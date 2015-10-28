@@ -80,7 +80,7 @@ struct OverlappedAcceptContext : public OverlappedIOContext
 void DeleteIoContext(OverlappedIOContext* context) ;
 
 //TODO: 아래의 ClientSession은 xnew/xdelete사용 가능하도록 클래스 정의 부분 수정
-class ClientSession
+class ClientSession : public PooledAllocatable
 {
 public:
 	ClientSession();

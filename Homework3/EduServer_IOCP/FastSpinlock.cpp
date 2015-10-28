@@ -31,3 +31,4 @@ void FastSpinlock::LeaveLock()
 {
 	InterlockedExchange(&mLockFlag, 0);
 }
+

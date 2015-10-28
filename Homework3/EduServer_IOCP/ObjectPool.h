@@ -13,6 +13,7 @@ public:
 	static void* operator new(size_t objSize)
 	{
 		//TODO: TOBJECT 타입 단위로 lock 잠금
+		ClassTypeLock<TOBJECT>::LockGuard guard;
 
 		if (!mFreeList)
 		{
@@ -42,6 +43,7 @@ public:
 	static void	operator delete(void* obj)
 	{
 		//TODO: TOBJECT 타입 단위로 lock 잠금
+		ClassTypeLock<TOBJECT>::LockGuard guard;
 
 		CRASH_ASSERT(mCurrentUseCount > 0);
 

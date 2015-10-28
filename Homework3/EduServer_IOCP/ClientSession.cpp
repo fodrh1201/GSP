@@ -52,8 +52,8 @@ bool ClientSession::PostAccept()
 	DWORD flags = 0;
 	acceptContext->mWsaBuf.len = 0;
 	acceptContext->mWsaBuf.buf = nullptr;
-
-	if (FALSE == AcceptEx(*GIocpManager->GetListenSocket(), mSocket, GIocpManager->mAcceptBuf, 0,
+	// address assign..?
+	if (FALSE == AcceptEx2(*GIocpManager->GetListenSocket(), mSocket, GIocpManager->mAcceptBuf, 0,
 		sizeof(SOCKADDR_IN)+16, sizeof(SOCKADDR_IN)+16, &bytes, (LPOVERLAPPED)acceptContext))
 	{
 		if (WSAGetLastError() != WSA_IO_PENDING)

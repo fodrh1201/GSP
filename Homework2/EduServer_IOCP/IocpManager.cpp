@@ -240,7 +240,6 @@ unsigned int WINAPI IocpManager::IoWorkerThread(LPVOID lpParam)
 bool IocpManager::PreReceiveCompletion(ClientSession* client, OverlappedPreRecvContext* context, DWORD dwTransferred)
 {
 	/// real receive...
-	printf_s("IocpManager::preReceveCompletion\n");
 	return client->PostRecv();
 }
 

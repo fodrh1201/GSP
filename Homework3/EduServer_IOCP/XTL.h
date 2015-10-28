@@ -1,4 +1,6 @@
 #pragma once
+#define _SILENCE_STDEXT_HASH_DEPRECATION_WARNINGS 1
+
 #include "MemoryPool.h"
 #include <list>
 #include <vector>
@@ -46,13 +48,13 @@ public:
 	T* allocate(size_t n)
 	{
 		//TODO: 메모리풀에서 할당해서 리턴
-		return static_cast<T*>(malloc(n*sizeof(T)));
+		return static_cast<T*>(GMemoryPool->Allocate(n));
 	}
 
 	void deallocate(T* ptr, size_t n)
 	{
 		//TODO: 메모리풀에 반납
-		free(ptr);
+		GMemoryPool->Deallocate(ptr, n);
 	}
 };
 
@@ -68,13 +70,14 @@ struct xdeque
 {
 	//TODO: STL 할당자를 사용하는 deque를 type으로 선언
 	//typedef ... type;
+	typedef std::deque<T, STLAllocator<T>> type;
 };
 
 template <class T>
 struct xlist
 {
 	//TODO: STL 할당자 사용
-	typedef std::list<T> type;
+	typedef std::list<T, STLAllocator<T>> type;
 };
 
 template <class K, class T, class C = std::less<K> >
@@ -82,6 +85,7 @@ struct xmap
 {
 	//TODO: STL 할당자 사용하는 map을  type으로 선언
 	//typedef ... type;
+	typedef std::map<K, T, C, STLAllocator<T>> type;
 };
 
 template <class T, class C = std::less<T> >
@@ -89,6 +93,7 @@ struct xset
 {
 	//TODO: STL 할당자 사용하는 set을  type으로 선언
 	//typedef ... type;
+	typedef std::set<T, C, STLAllocator<T>> type;
 };
 
 template <class K, class T, class C = std::hash_compare<K, std::less<K>> >
@@ -108,6 +113,7 @@ struct xpriority_queue
 {
 	//TODO: STL 할당자 사용하는 priority_queue을  type으로 선언
 	//typedef ... type;
+	typedef std::priority_queue<T, C, STLAllocator<T>> type;
 };
 
 typedef std::basic_string<wchar_t, std::char_traits<wchar_t>, STLAllocator<wchar_t>> xstring;
